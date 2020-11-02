@@ -3,7 +3,11 @@ package de.dasco.mygallery.utils
 import java.text.SimpleDateFormat
 import java.util.*
 
-fun Long.smartDate(date: Long): String{
+fun smartDate(date: Long): String{
     val formatter = SimpleDateFormat("E, d MMMM yyyy", Locale.getDefault())
-    return formatter.format(date * 1000)
+/*
+    println("Formatted date: ${date}")
+    println("Formatted date: ${formatter.format(date)}")
+*/
+    return formatter.format(date*1000)
 }

@@ -15,10 +15,9 @@
         android:name="de.dasco.mygallery.timeline.TimelineFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_margin="4dp"
         app:layoutManager="LinearLayoutManager"
+        app:listDataTimeline="@{viewModel.images}"
         tools:context=".timeline.TimelineFragment"
-        tools:listitem="@layout/recyclerview_item"
-        app:listDataTimeline="@{viewModel.images}"/>
+        tools:listitem="@layout/recyclerview_item" />
 </layout>

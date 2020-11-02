@@ -1,19 +1,24 @@
 package de.dasco.mygallery.timeline
 
-import android.database.DatabaseUtils
+import android.graphics.Rect
 import android.os.Bundle
+import android.view.*
+import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.selection.SelectionPredicates
+import androidx.recyclerview.selection.SelectionTracker
+import androidx.recyclerview.selection.StorageStrategy
+import androidx.recyclerview.widget.RecyclerView
+import de.dasco.mygallery.MyItemDetailsLookup
+import de.dasco.mygallery.MyItemKeyProvider
 import de.dasco.mygallery.R
 import de.dasco.mygallery.databinding.FragmentTimelineListBinding
+import kotlinx.android.synthetic.main.fragment_timeline_list.*
+import kotlinx.android.synthetic.main.recyclerview_item.view.*
 
 /**
  * A fragment representing a list of Items.
@@ -37,12 +42,41 @@ class TimelineFragment : Fragment() {
         ).get(TimelineViewModel::class.java)
     }
 
+    private var actionMode: ActionMode? = null
+    private var tracker: SelectionTracker<Long>? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
 
-        arguments?.let {
-            columnCount = it.getInt(ARG_COLUMN_COUNT)
+    private val actionModeCallback = object : ActionMode.Callback {
+        // Called when the action mode is created; startActionMode() was called
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            // Inflate a menu resource providing context menu items
+            val inflater: MenuInflater = mode.menuInflater
+            inflater.inflate(R.menu.context_menu, menu)
+            return true
+        }
+
+        // Called each time the action mode is shown. Always called after onCreateActionMode, but
+        // may be called multiple times if the mode is invalidated.
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+            return false // Return false if nothing is done
+        }
+
+        // Called when the user selects a contextual menu item
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            return when (item.itemId) {
+                R.id.menu_share -> {
+//                    shareCurrentItem()
+                    mode.finish() // Action picked, so close the CAB
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // Called when the user exits the action mode
+        override fun onDestroyActionMode(mode: ActionMode) {
+            tracker?.clearSelection()
+            actionMode = null
         }
     }
 
@@ -66,49 +100,86 @@ class TimelineFragment : Fragment() {
             layoutManager = when {
                 columnCount <= 1 -> LinearLayoutManager(context)
                 else -> GridLayoutManager(context, columnCount).apply {
-                    spanSizeLookup = object :GridLayoutManager.SpanSizeLookup(){
+                    spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                         override fun getSpanSize(position: Int): Int {
-                            return if(adapter?.getItemViewType(position) == 1){
+                            return if (adapter?.getItemViewType(position) == 1) {
                                 1
-                            }else{
-                               spanCount
+                            } else {
+                                spanCount
                             }
                         }
-
                     }
                 }
             }
 
+            addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    outRect.set(4, 4, 4, 4)
+//                    super.getItemOffsets(outRect, view, parent, state)
+                }
+            })
+
+            setItemViewCacheSize(20)
+
             adapter = timelineAdapter
         }
+
+        tracker = SelectionTracker.Builder(
+            "mySelection",
+            binding.recyclerview,
+            MyItemKeyProvider(timelineAdapter),
+            MyItemDetailsLookup(binding.recyclerview),
+            StorageStrategy.createLongStorage()
+        ).withSelectionPredicate(
+            SelectionPredicates.createSelectAnything()
+        ).build()
+
+        timelineAdapter.tracker = tracker
+
+        tracker?.addObserver(
+            object : SelectionTracker.SelectionObserver<Long>() {
+
+                override fun onSelectionChanged() {
+                    super.onSelectionChanged()
+                    val items = tracker?.selection!!.size()
+
+                    if (items == 0) {
+
+                        actionMode?.finish()
+
+                        recyclerview.children.forEach {
+                            it.checkBoxContainer?.transitionToStart()
+                        }
+
+                    } else {
+                        when (actionMode) {
+                            null -> {
+                                // Start the CAB using the ActionMode.Callback defined above
+                                actionMode = activity?.startActionMode(actionModeCallback)
+
+                                recyclerview.children.forEach {
+                                    it.checkBoxContainer?.transitionToEnd()
+                                }
+
+                            }
+                        }
+
+
+                        actionMode?.title = items.toString()
+                    }
+                }
+            })
 
         binding.lifecycleOwner = this
 
         binding.viewModel = viewModel
 
-/*
-        viewModel.images.observe(viewLifecycleOwner, {
-            println("Submit: $it")
-            timelineAdapter.submitList(it)
-        })
-*/
-
-
         return binding.root
     }
 
-    companion object {
-
-        // TODO: Customize parameter argument names
-        const val ARG_COLUMN_COUNT = "column-count"
-
-        // TODO: Customize parameter initialization
-        @JvmStatic
-        fun newInstance(columnCount: Int) =
-            TimelineFragment().apply {
-                arguments = Bundle().apply {
-                    putInt(ARG_COLUMN_COUNT, columnCount)
-                }
-            }
-    }
 }

@@ -24,19 +24,6 @@ class TimelineViewModel(application: Application) : AndroidViewModel(application
     val images = repository.getImageList()
 
 
-    private val formatter = SimpleDateFormat("E, d MMMM yyyy", Locale.getDefault())
-
-/*
-    val images = Transformations.map(repository.getImnages(application)) { elements ->
-        elements.mapIndexed { index, mediaItem ->
-
-            DataItem.ImageItem(mediaItem)
-
-        }
-
-    }
-*/
-
     init {
         viewModelScope.launch {
             repository.getAllImages(application)

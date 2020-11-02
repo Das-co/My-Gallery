@@ -11,9 +11,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import de.dasco.mygallery.models.HeaderItem
 import de.dasco.mygallery.models.MediaItem
+import de.dasco.mygallery.utils.smartDate
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
 import java.util.*
+import kotlin.collections.ArrayList
 
 class TimelineRepository() {
 
@@ -21,18 +24,7 @@ class TimelineRepository() {
 
     private val formatter = SimpleDateFormat("E, d MMMM yyyy", Locale.getDefault())
 
-    val images = MutableLiveData<List<DataItem>>()
-
-//    fun getImagesWithHeader(application: Application) = getImnages(application)
-
 /*
-    private val contentObserver = object: ContentObserver(Handler(Looper.myLooper()!!)) {
-        override fun onChange(selfChange: Boolean) {
-            getImnages()
-        }
-    }
-*/
-
     fun getImages(application: Application): LiveData<List<DataItem>> {
 
         job = Job()
@@ -79,7 +71,6 @@ class TimelineRepository() {
                             println("SIZE: $sizeColumn")
 
                             var lastDate = ""
-
                             while (cursor.moveToNext()) {
 
                                 val id = cursor.getLong(idColumn)
@@ -108,11 +99,13 @@ class TimelineRepository() {
 
 //                                println("DATE: ${formattedDateString}")
                                 imageList.add(DataItem.ImageItem(item))
+*/
 /*
                                 withContext(Dispatchers.Main) {
                                     value = imageList
                                 }
-*/
+*//*
+
                             }
 //                            println("Array: ${images.value}")
                         }
@@ -138,95 +131,8 @@ class TimelineRepository() {
             }
         }
     }
-
-
-    suspend fun loadImages(application: Application) {
-        job?.let { singleJob ->
-            CoroutineScope(Dispatchers.IO + singleJob).launch {
-
-                val imageList = mutableListOf<DataItem>()
-
-                val projection =
-                    arrayOf(
-                        MediaStore.Images.Media._ID,
-                        MediaStore.Images.Media.DISPLAY_NAME,
-                        MediaStore.Images.Media.SIZE,
-                        MediaStore.Images.Media.DATE_MODIFIED
-                    )
-
-                val selection: String? =
-                    "${MediaStore.Images.Media.SIZE} >= ?"     //Selection criteria
-                val selectionArgs = arrayOf<String>("20000")  //Selection criteria
-                val sortOrder: String? = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
-
-
-
-                application.contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    selection,
-                    selectionArgs,
-                    sortOrder
-                )?.use { cursor ->
-                    // Cache column indices.
-                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                    println("ID: $idColumn")
-                    //            val nameColumn =
-                    //                cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-                    val sizeColumn =
-                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
-
-                    val dateColumn =
-                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
-                    println("SIZE: $sizeColumn")
-
-                    var lastDate = ""
-
-                    while (cursor.moveToNext()) {
-
-                        val id = cursor.getLong(idColumn)
-                        val size = cursor.getLong(sizeColumn)
-                        val date = cursor.getLong(dateColumn)
-
-                        val contentUri: Uri = ContentUris.withAppendedId(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                            id
-                        )
-                        val item = MediaItem(id, contentUri.toString(), size, date)
-
-                        val formattedDateString = formatter.format(date * 1000)
-
-                        if (lastDate != formattedDateString) {
-                            lastDate = formattedDateString
-//                                    println("DATE different: ${formattedDateString}")
-                            imageList.add(
-                                DataItem.Header(
-                                    HeaderItem(
-                                        date.hashCode().toLong(), date
-                                    )
-                                )
-                            )
-                        }
-
-//                                println("DATE: ${formattedDateString}")
-                        imageList.add(DataItem.ImageItem(item))
-/*
-                                withContext(Dispatchers.Main) {
-                                    value = imageList
-                                }
 */
-                    }
-//                            println("Array: ${images.value}")
-                }
 
-                withContext(Dispatchers.Main) {
-                    images.value = imageList
-                    singleJob.complete()
-                }
-
-            }
-        }
-    }
 
     private var imagesLiveData: MutableLiveData<List<DataItem>> = MutableLiveData()
     fun getImageList(): MutableLiveData<List<DataItem>> {
@@ -240,7 +146,7 @@ class TimelineRepository() {
      *
      * @return ArrayList with images Path
      */
-    internal fun loadImagesFromSDCard(application: Application): MutableList<DataItem> {
+    private fun loadImagesFromSDCard(application: Application): MutableList<DataItem> {
         val imageList = mutableListOf<DataItem>()
 
         val projection =
@@ -253,10 +159,8 @@ class TimelineRepository() {
 
         val selection: String? =
             "${MediaStore.Images.Media.SIZE} >= ?"     //Selection criteria
-        val selectionArgs = arrayOf<String>("20000")  //Selection criteria
+        val selectionArgs = arrayOf("20000")  //Selection criteria
         val sortOrder: String? = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
-
-
 
         application.contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -275,6 +179,12 @@ class TimelineRepository() {
                 cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
 
             var lastDate = ""
+
+            var header: HeaderItem? = null
+//            val headerChildren = ArrayList<Long>()
+
+//            val headerList = ArrayList<HeaderItem>()
+
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val size = cursor.getLong(sizeColumn)
@@ -286,26 +196,29 @@ class TimelineRepository() {
                 )
                 val item = MediaItem(id, contentUri.toString(), size, date)
 
-                val formattedDateString = formatter.format(date * 1000)
+                val formattedDateString = smartDate(date)
 
                 if (lastDate != formattedDateString) {
+
+                    header = HeaderItem(
+                        date.hashCode().toLong(), date, ArrayList()
+                    )
+
                     lastDate = formattedDateString
-//                                    println("DATE different: ${formattedDateString}")
+
                     imageList.add(
                         DataItem.Header(
-                            HeaderItem(
-                                date.hashCode().toLong(), date
-                            )
+                            header
                         )
                     )
                 }
 
-//                                println("DATE: ${formattedDateString}")
+                header?.children?.add(id)
+
                 imageList.add(DataItem.ImageItem(item))
             }
 
         }
-        println("LOADIMAGESFROMSDCART")
 
         return imageList
     }
@@ -319,55 +232,4 @@ class TimelineRepository() {
             }
         }
     }
-/*
-    fun loadImages(application: Application): List<MediaItem> {
-        val listOfAllImages = ArrayList<MediaItem>()
-
-        val projection =
-            arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.DISPLAY_NAME,
-                MediaStore.Images.Media.SIZE,
-                MediaStore.Images.Media.DATE_MODIFIED
-            )
-
-        val selection: String? = "${MediaStore.Images.Media.SIZE} >= ?"     //Selection criteria
-        val selectionArgs = arrayOf<String>("20000")  //Selection criteria
-        val sortOrder: String? = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
-
-
-
-        application.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            selection,
-            selectionArgs,
-            sortOrder
-        )?.use { cursor ->
-            // Cache column indices.
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            println("ID: $idColumn")
-            //            val nameColumn =
-            //                cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
-            println("SIZE: $sizeColumn")
-            while (cursor.moveToNext()) {
-
-                val id = cursor.getLong(idColumn)
-                val size = cursor.getLong(sizeColumn)
-
-                val contentUri: Uri = ContentUris.withAppendedId(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    id
-                )
-
-                // Stores column values and the contentUri in a local object
-                // that represents the media file.
-                listOfAllImages += MediaItem(contentUri.toString(), size)
-            }
-            println("Array: ${listOfAllImages}")
-        }
-        return listOfAllImages
-    }
-*/
 }

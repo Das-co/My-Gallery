@@ -24,39 +24,6 @@ fun bindGalleryRecyclerView(recyclerView: RecyclerView, data: List<DataItem>?) {
     val adappter = recyclerView.adapter as MyMediaItemRecyclerViewAdapter
     adappter.submitList(data)
 
-
-/*
-    val items = when (data) {
-        null -> listOf(DataItem.Header)
-        else -> data.map {
-            println("$it")
-            DataItem.ImageItem(it)
-        }
-    }
-
-    val adappter = recyclerView.adapter as MyMediaItemRecyclerViewAdapter
-    adappter.submitList(items)
-*/
-
-
-/*
-    adapterScope.launch {
-
-        val items = when (data) {
-            null -> listOf(DataItem.Header)
-            else -> data.map {
-                println("$it")
-                DataItem.ImageItem(it)
-            }
-        }
-        withContext(Dispatchers.Main){
-            val adappter = recyclerView.adapter as MyMediaItemRecyclerViewAdapter
-            adappter.submitList(items)
-
-        }
-    }
-*/
-
 }
 
 /**
@@ -83,7 +50,7 @@ fun bindImage(imgView: ImageView, imgUri: String) {
  */
 @BindingAdapter("headerDate")
 fun bindHeader(textView: TextView, date: String) {
-    println("Bind header: ")
+//    println("Bind header: ")
 //    println("Bind header: $date")
     date.let {
         textView.text = date

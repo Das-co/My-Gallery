@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
 
@@ -9,12 +10,41 @@
             type="de.dasco.mygallery.timeline.DataItem.Header" />
     </data>
 
-    <TextView
-        android:id="@+id/text"
+    <androidx.constraintlayout.motion.widget.MotionLayout
+        android:id="@+id/constraintLayout2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:textColor="#FFFFFF"
-        android:text="TEST"
-        app:headerDate="@{text.header.formattedDate}" />
+        app:layoutDescription="@xml/header_item_xml_constraintlayout_scene">
+
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="@dimen/image_padding"
+            android:layout_marginStart="8dp"
+            android:gravity="start|center_vertical"
+            android:textColor="@android:color/primary_text_dark"
+            app:headerDate="@{text.header.formattedDate}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/checkBoxHeader"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="TEST" />
+
+        <RadioButton
+            android:id="@+id/checkBoxHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:checked="false"
+            android:minWidth="0dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/text"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.motion.widget.MotionLayout>
+
 </layout>
