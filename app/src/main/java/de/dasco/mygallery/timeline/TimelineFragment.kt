@@ -17,7 +17,9 @@ import de.dasco.mygallery.MyItemDetailsLookup
 import de.dasco.mygallery.MyItemKeyProvider
 import de.dasco.mygallery.R
 import de.dasco.mygallery.databinding.FragmentTimelineListBinding
+import de.dasco.mygallery.models.HeaderItem
 import kotlinx.android.synthetic.main.fragment_timeline_list.*
+import kotlinx.android.synthetic.main.header_item.view.*
 import kotlinx.android.synthetic.main.recyclerview_item.view.*
 
 /**
@@ -144,6 +146,50 @@ class TimelineFragment : Fragment() {
         tracker?.addObserver(
             object : SelectionTracker.SelectionObserver<Long>() {
 
+                fun headerSelect(header: HeaderItem): Boolean {
+
+                    header.children.forEach { child ->
+                        if (!tracker?.isSelected(child)!!) {
+                            return false
+                        }
+                    }
+
+                    return true
+                }
+
+                override fun onItemStateChanged(key: Long, selected: Boolean) {
+
+                    val item = timelineAdapter.currentList.find { dataItem -> dataItem.id == key }
+                    if (item is DataItem.ImageItem) {
+                        if (!selected) {
+                            tracker?.deselect(item.image.header)
+                        }
+                        val headerItem = timelineAdapter.currentList.find { dataItem -> dataItem.id == item.image.header } as DataItem.Header
+                        if(headerSelect(headerItem.header)){
+                            tracker?.select(item.image.header)
+                        }
+                    }
+
+                    if (item is DataItem.Header) {
+//                        println("${ tracker?.selection. item.header.children }")
+                        if (selected) {
+                            tracker?.setItemsSelected(item.header.children, true)
+                        } else {
+
+                            if (headerSelect(item.header)) {
+                                tracker?.setItemsSelected(
+                                    item.header.children,
+                                    false
+                                )
+                            }
+
+                        }
+                    }
+
+
+                    super.onItemStateChanged(key, selected)
+                }
+
                 override fun onSelectionChanged() {
                     super.onSelectionChanged()
                     val items = tracker?.selection!!.size()
@@ -154,6 +200,10 @@ class TimelineFragment : Fragment() {
 
                         recyclerview.children.forEach {
                             it.checkBoxContainer?.transitionToStart()
+                            it.headerContainer?.transitionToStart()
+                            it.imageContainer?.setTransitionDuration(1)
+                            it.imageContainer?.transitionToStart()
+                            it.imageContainer?.setTransitionDuration(100)
                         }
 
                     } else {
@@ -164,13 +214,26 @@ class TimelineFragment : Fragment() {
 
                                 recyclerview.children.forEach {
                                     it.checkBoxContainer?.transitionToEnd()
+                                    it.headerContainer?.transitionToEnd()
                                 }
 
                             }
                         }
 
+                        tracker?.selection!!
 
-                        actionMode?.title = items.toString()
+
+                        val imageCounter =
+                            tracker?.selection!!.filter {
+                                timelineAdapter.currentList.find { dataItem -> dataItem.id == it } is DataItem.ImageItem
+                            }.size
+//                        println("Counter: ${timelineAdapter.currentList.get(0) is DataItem.Header}")
+                        println("Counter: $imageCounter")
+                        tracker?.selection!!.forEach {
+
+                        }
+
+                        actionMode?.title = imageCounter.toString()
                     }
                 }
             })

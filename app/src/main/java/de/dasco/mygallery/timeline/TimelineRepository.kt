@@ -22,8 +22,6 @@ class TimelineRepository() {
 
     private var job: CompletableJob? = null
 
-    private val formatter = SimpleDateFormat("E, d MMMM yyyy", Locale.getDefault())
-
 /*
     fun getImages(application: Application): LiveData<List<DataItem>> {
 
@@ -194,7 +192,6 @@ class TimelineRepository() {
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     id
                 )
-                val item = MediaItem(id, contentUri.toString(), size, date)
 
                 val formattedDateString = smartDate(date)
 
@@ -212,8 +209,8 @@ class TimelineRepository() {
                         )
                     )
                 }
-
-                header?.children?.add(id)
+                val item = MediaItem(id, contentUri.toString(), size, date, header!!.id)
+                header.children.add(id)
 
                 imageList.add(DataItem.ImageItem(item))
             }

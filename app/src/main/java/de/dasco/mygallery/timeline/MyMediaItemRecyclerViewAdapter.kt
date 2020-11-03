@@ -14,6 +14,7 @@ import de.dasco.mygallery.databinding.HeaderItemBinding
 import de.dasco.mygallery.databinding.RecyclerviewItemBinding
 import de.dasco.mygallery.models.HeaderItem
 import de.dasco.mygallery.models.MediaItem
+import kotlinx.android.synthetic.main.header_item.view.*
 import kotlinx.android.synthetic.main.recyclerview_item.view.*
 
 private val ITEM_VIEW_TYPE_HEADER = 0
@@ -47,6 +48,7 @@ class MyMediaItemRecyclerViewAdapter(
             else -> throw ClassCastException("Unknown viewType ${viewType}")
         }
     }
+
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
@@ -88,26 +90,34 @@ class MyMediaItemRecyclerViewAdapter(
     }
 */
 
+
+    //Necessary to set the views in the desired state that are not on screen onSelectionChange, but are also not bound again
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
 
+        //State of the checkboxes
         if (tracker?.hasSelection()!!) {
-
-            holder.itemView.checkBoxImage?.visibility = View.VISIBLE
-//            holder.itemView.checkBoxContainer?.transitionToEnd()
-//            holder.itemView.checkBoxContainer?.getTransition(R.id.enableCheckbox)?.setEnable(true)
             holder.itemView.checkBoxContainer?.transitionToEnd()
+            holder.itemView.headerContainer?.transitionToEnd()
         } else {
-//            holder.itemView.checkBoxContainer?.transitionToStart()
-            holder.itemView.checkBoxImage?.visibility = View.INVISIBLE
             holder.itemView.checkBoxContainer?.transitionToStart()
-//            holder.itemView.checkBoxContainer?.
+            holder.itemView.headerContainer?.transitionToStart()
+        }
 
-//            holder.itemView.checkBoxContainer?.transitionToState(R.id.start)
-
+        //state of the images
+        if(tracker?.isSelected(holder.itemId)!!){
+            holder.itemView.imageContainer?.setTransitionDuration(1)
+            holder.itemView.imageContainer?.transitionToEnd()
+            holder.itemView.imageContainer?.setTransitionDuration(100)
+        }else{
+            //shortening the transition duration so User don't see the transition when scrolling
+            holder.itemView.imageContainer?.setTransitionDuration(1)
+            holder.itemView.imageContainer?.transitionToStart()
+            holder.itemView.imageContainer?.setTransitionDuration(100)
         }
 
         super.onViewAttachedToWindow(holder)
     }
+
 
     override fun getItemId(position: Int) = getItem(position).id
 
@@ -150,9 +160,18 @@ class MyMediaItemRecyclerViewAdapter(
 
         fun bind(item: DataItem.Header, selected: Boolean) {
 
-            val motionLayout: MotionLayout = binding.constraintLayout2 as MotionLayout
-
             binding.checkBoxHeader.isChecked = selected
+
+
+
+            if (tracker!!.hasSelection()) {
+                if (selected) {
+                    binding.headerContainer.transitionToEnd()
+                }
+            } else {
+                binding.headerContainer.transitionToStart()
+            }
+
 
             binding.setText(item)
             binding.executePendingBindings()
